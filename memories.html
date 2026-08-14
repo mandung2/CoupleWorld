@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>흠민정흠</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fbf1ec;
+    --surface: #ffffff;
+    --ink: #2e1b22;
+    --muted: #8b6b70;
+    --accent: #c23b57;
+    --accent-soft: #f6dde2;
+    --line: #e8d3d2;
+    --font-display: 'Gowun Batang', serif;
+    --font-body: 'Gowun Dodum', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1b1216;
+      --surface: #241820;
+      --ink: #f3e6e4;
+      --muted: #b08a90;
+      --accent: #ff6e86;
+      --accent-soft: #3a2028;
+      --line: #3a262c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #1b1216;
+    --surface: #241820;
+    --ink: #f3e6e4;
+    --muted: #b08a90;
+    --accent: #ff6e86;
+    --accent-soft: #3a2028;
+    --line: #3a262c;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+  }
+
+  .font-display { font-family: var(--font-display); }
+  h1 { text-wrap: balance; }
+
+  .entry {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+  }
+  .entry-divider {
+    border-right: 1px dashed var(--line);
+  }
+  .tag {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  a.home-link { transition: opacity 0.15s ease; }
+  a.home-link:hover, a.home-link:focus-visible { opacity: 0.65; }
+
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body class="leading-relaxed">
+
+<div class="max-w-3xl mx-auto px-6">
+
+  <header class="flex justify-between items-center py-7 border-b" style="border-color: var(--line)">
+    <a href="index.html" class="home-link text-xs uppercase tracking-widest" style="color: var(--muted)">← 만둥만덩's VLOG</a>
+    <div class="font-display text-lg font-bold tracking-tight" style="color: var(--accent)">흠민정흠</div>
+  </header>
+
+  <section class="py-16 md:py-24 text-center">
+    <p class="text-xs uppercase tracking-[0.3em] mb-4" style="color: var(--accent)">Memory Archive</p>
+    <h1 class="font-display text-4xl md:text-5xl leading-snug mb-5">우리 둘만의<br>기억 보관함</h1>
+    <p class="max-w-md mx-auto text-sm md:text-base" style="color: var(--muted)">
+      스쳐 지나가면 잊혀질 순간들을, 우리만 아는 방식으로 붙잡아두는 곳.
+    </p>
+  </section>
+
+  <section class="pb-24 space-y-5">
+
+    <article class="entry grid grid-cols-[88px_1fr] md:grid-cols-[110px_1fr] gap-4 p-5 md:p-6">
+      <div class="entry-divider pr-4 flex flex-col justify-center">
+        <div class="text-sm tabular-nums" style="color: var(--muted)">2026.02.14</div>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-display text-lg md:text-xl">첫 만남</h2>
+          <span class="tag text-xs px-2 py-0.5 rounded-full">시작</span>
+        </div>
+        <p class="text-sm md:text-base" style="color: var(--muted)">카페 구석 자리에서, 우연히 같은 책을 들고 있었다.</p>
+      </div>
+    </article>
+
+    <article class="entry grid grid-cols-[88px_1fr] md:grid-cols-[110px_1fr] gap-4 p-5 md:p-6">
+      <div class="entry-divider pr-4 flex flex-col justify-center">
+        <div class="text-sm tabular-nums" style="color: var(--muted)">2026.03.10</div>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-display text-lg md:text-xl">첫 데이트</h2>
+          <span class="tag text-xs px-2 py-0.5 rounded-full">데이트</span>
+        </div>
+        <p class="text-sm md:text-base" style="color: var(--muted)">비 오는 날, 우산 하나를 나눠 쓰고 오래 걸었던 밤.</p>
+      </div>
+    </article>
+
+    <article class="entry grid grid-cols-[88px_1fr] md:grid-cols-[110px_1fr] gap-4 p-5 md:p-6">
+      <div class="entry-divider pr-4 flex flex-col justify-center">
+        <div class="text-sm tabular-nums" style="color: var(--muted)">2026.05.23</div>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-display text-lg md:text-xl">100일</h2>
+          <span class="tag text-xs px-2 py-0.5 rounded-full">기념일</span>
+        </div>
+        <p class="text-sm md:text-base" style="color: var(--muted)">작은 케이크와 손편지, 그리고 오래 웃었던 저녁.</p>
+      </div>
+    </article>
+
+    <article class="entry grid grid-cols-[88px_1fr] md:grid-cols-[110px_1fr] gap-4 p-5 md:p-6">
+      <div class="entry-divider pr-4 flex flex-col justify-center">
+        <div class="text-sm tabular-nums" style="color: var(--muted)">2026.07.19</div>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-display text-lg md:text-xl">첫 여행, 강릉</h2>
+          <span class="tag text-xs px-2 py-0.5 rounded-full">여행</span>
+        </div>
+        <p class="text-sm md:text-base" style="color: var(--muted)">파도 소리를 배경으로, 아무 말 없이 앉아만 있었던 시간.</p>
+      </div>
+    </article>
+
+    <article class="entry grid grid-cols-[88px_1fr] md:grid-cols-[110px_1fr] gap-4 p-5 md:p-6">
+      <div class="entry-divider pr-4 flex flex-col justify-center">
+        <div class="text-sm tabular-nums" style="color: var(--muted)">2026.08.14</div>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-display text-lg md:text-xl">오늘</h2>
+          <span class="tag text-xs px-2 py-0.5 rounded-full">기록</span>
+        </div>
+        <p class="text-sm md:text-base" style="color: var(--muted)">이 보관함을 만든 날.</p>
+      </div>
+    </article>
+
+  </section>
+
+  <footer class="flex justify-between items-center py-8 border-t text-xs uppercase tracking-wide" style="border-color: var(--line); color: var(--muted)">
+    <span>© 2026 흠민정흠</span>
+    <span>Kept, not posted</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
