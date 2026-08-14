@@ -15,6 +15,13 @@
     font-display: swap;
   }
 
+  @font-face {
+    font-family: 'JejuStoneWall';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_jejudoldam.woff2') format('woff2');
+    font-weight: normal;
+    font-display: swap;
+  }
+
   :root {
     --bg: #f4f5f2;
     --surface: #ffffff;
@@ -60,6 +67,7 @@
   .font-mono { font-family: var(--font-mono); }
 
   h1 { text-wrap: balance; }
+  .hero-title { font-family: 'JejuStoneWall', var(--font-display); }
 
   a.post-title { transition: color 0.15s ease; }
   a.post-title:hover, a.post-title:focus-visible { color: var(--accent); }
@@ -82,7 +90,7 @@
 <div class="max-w-5xl mx-auto px-6">
 
   <header class="flex justify-between items-center py-7 border-b" style="border-color: var(--border)">
-    <div class="font-display text-xl tracking-tight">해변의 기록</div>
+    <div class="font-display text-xl tracking-tight">만둥만덩's VLOG</div>
     <nav class="flex gap-8 text-sm" style="color: var(--muted)">
       <a href="#" class="intro-link">Home</a>
       <a href="#" class="intro-link">About</a>
@@ -93,7 +101,7 @@
   <section class="grid md:grid-cols-[1.3fr_1fr] gap-10 md:gap-16 py-20 items-end">
     <div>
       <p class="text-xs uppercase tracking-[0.2em] mb-4" style="color: var(--accent)">Personal Blog</p>
-      <h1 class="font-display text-4xl md:text-5xl leading-[1.15]">생각을 기록하는<br>조용한 공간</h1>
+      <h1 class="hero-title font-display text-4xl md:text-5xl leading-[1.15]">생각을 기록하는<br>조용한 공간</h1>
     </div>
     <div class="space-y-5">
       <p class="text-base" style="color: var(--muted)">
@@ -125,7 +133,7 @@
   </section>
 
   <footer class="flex justify-between items-center py-8 border-t text-xs uppercase tracking-wide" style="border-color: var(--border); color: var(--muted)">
-    <span>© 2026 해변의 기록</span>
+    <span>© 2026 만둥만덩's VLOG</span>
     <span>Built with care</span>
   </footer>
 
