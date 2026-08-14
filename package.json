@@ -1,0 +1,10 @@
+{
+  "name": "blog",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "^4.123.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy"
+  }
+}
