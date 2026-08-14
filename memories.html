@@ -5,10 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>흠민정흠</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
+  @font-face {
+    font-family: 'JejuStoneWall';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_jejudoldam.woff2') format('woff2');
+    font-weight: normal;
+    font-display: swap;
+  }
+
   :root {
     --paper: #fbf1ec;
     --surface: #ffffff;
@@ -17,8 +21,8 @@
     --accent: #c23b57;
     --accent-soft: #f6dde2;
     --line: #e8d3d2;
-    --font-display: 'Gowun Batang', serif;
-    --font-body: 'Gowun Dodum', sans-serif;
+    --font-display: 'JejuStoneWall', serif;
+    --font-body: 'JejuStoneWall', sans-serif;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -65,9 +69,6 @@
     color: var(--accent);
   }
 
-  a.home-link { transition: opacity 0.15s ease; }
-  a.home-link:hover, a.home-link:focus-visible { opacity: 0.65; }
-
   a:focus-visible, button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
@@ -82,8 +83,7 @@
 
 <div class="max-w-3xl mx-auto px-6">
 
-  <header class="flex justify-between items-center py-7 border-b" style="border-color: var(--line)">
-    <a href="index.html" class="home-link text-xs uppercase tracking-widest" style="color: var(--muted)">← 만둥만덩's VLOG</a>
+  <header class="flex justify-center items-center py-7 border-b" style="border-color: var(--line)">
     <div class="font-display text-lg font-bold tracking-tight" style="color: var(--accent)">흠민정흠</div>
   </header>
 
