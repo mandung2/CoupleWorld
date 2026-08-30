@@ -15,7 +15,7 @@ export async function onRequestPost({ request, env }) {
   if (row.suspended) return json({ ok: false, msg: '[시스템] 정지된 계정입니다. 관리자에게 문의해주세요.' });
 
   const token = randomHex(24);
-  await env.DB.prepare('UPDATE users SET session_token = ? WHERE id = ?').bind(token, id).run();
+  await env.DB.prepare("UPDATE users SET session_token = ?, last_login = datetime('now') WHERE id = ?").bind(token, id).run();
 
   let partnerNickname = null;
   if (row.partner_id) {

@@ -22,7 +22,7 @@ export async function onRequestPost({ request, env }) {
   const hash = await hashPassword(password, salt);
   const token = randomHex(24);
   await env.DB.prepare(
-    'INSERT INTO users (id, password_hash, nickname, gender, birth, session_token) VALUES (?, ?, ?, ?, ?, ?)'
+    "INSERT INTO users (id, password_hash, nickname, gender, birth, session_token, last_login) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))"
   ).bind(id, salt + '$' + hash, nickname, gender, birth, token).run();
 
   return json({ ok: true, token, user: { id, nickname, gender, birth, partnerId: null, partnerNickname: null, startDate: null, linked: false } });

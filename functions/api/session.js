@@ -9,6 +9,8 @@ export async function onRequestPost({ request, env }) {
   const row = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
   if (!row || row.session_token !== token) return json({ ok: false });
 
+  await env.DB.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").bind(id).run();
+
   let partnerNickname = null;
   if (row.partner_id) {
     const p = await env.DB.prepare('SELECT nickname FROM users WHERE id = ?').bind(row.partner_id).first();
