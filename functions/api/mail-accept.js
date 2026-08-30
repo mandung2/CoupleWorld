@@ -11,6 +11,7 @@ export async function onRequestPost({ request, env }) {
 
   const mail = await env.DB.prepare('SELECT * FROM mail WHERE id = ? AND to_id = ?').bind(mailId, id).first();
   if (!mail) return json({ ok: false, msg: '[시스템] 신청서를 찾을 수 없습니다.' });
+  if ((mail.type || 'couple_request') !== 'couple_request') return json({ ok: false, msg: '[시스템] 수락할 수 없는 우편입니다.' });
 
   await env.DB.batch([
     env.DB.prepare('UPDATE users SET partner_id = ?, start_date = ?, linked = 1 WHERE id = ?').bind(mail.from_id, mail.start_date, id),

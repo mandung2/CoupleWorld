@@ -11,6 +11,9 @@ export async function onRequestPost({ request, env }) {
   const { results } = await env.DB.prepare('SELECT * FROM mail WHERE to_id = ? ORDER BY created_at').bind(id).all();
   return json({
     ok: true,
-    items: results.map(r => ({ id: r.id, fromId: r.from_id, fromNickname: r.from_nickname, startDate: r.start_date }))
+    items: results.map(r => ({
+      id: r.id, type: r.type || 'couple_request', fromId: r.from_id, fromNickname: r.from_nickname,
+      startDate: r.start_date, title: r.title, body: r.body
+    }))
   });
 }
