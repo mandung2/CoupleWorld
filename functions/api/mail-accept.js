@@ -19,5 +19,7 @@ export async function onRequestPost({ request, env }) {
     env.DB.prepare('DELETE FROM mail WHERE id = ?').bind(mailId)
   ]);
 
-  return json({ ok: true, partnerNickname: mail.from_nickname, startDate: mail.start_date });
+  const partner = await env.DB.prepare('SELECT avatar FROM users WHERE id = ?').bind(mail.from_id).first();
+
+  return json({ ok: true, partnerNickname: mail.from_nickname, startDate: mail.start_date, partnerAvatar: partner ? partner.avatar : null });
 }

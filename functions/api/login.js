@@ -18,16 +18,19 @@ export async function onRequestPost({ request, env }) {
   await env.DB.prepare("UPDATE users SET session_token = ?, last_login = datetime('now') WHERE id = ?").bind(token, id).run();
 
   let partnerNickname = null;
+  let partnerAvatar = null;
   if (row.partner_id) {
-    const p = await env.DB.prepare('SELECT nickname FROM users WHERE id = ?').bind(row.partner_id).first();
+    const p = await env.DB.prepare('SELECT nickname, avatar FROM users WHERE id = ?').bind(row.partner_id).first();
     partnerNickname = p ? p.nickname : null;
+    partnerAvatar = p ? p.avatar : null;
   }
 
   return json({
     ok: true, token,
     user: {
       id: row.id, nickname: row.nickname, gender: row.gender, birth: row.birth,
-      partnerId: row.partner_id, partnerNickname, startDate: row.start_date, linked: !!row.linked
+      partnerId: row.partner_id, partnerNickname, startDate: row.start_date, linked: !!row.linked,
+      points: row.points || 0, avatar: row.avatar || null, partnerAvatar
     }
   });
 }
