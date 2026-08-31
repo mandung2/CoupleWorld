@@ -25,6 +25,6 @@ export async function onRequestPost({ request, env }) {
   ]);
 
   const row = await env.DB.prepare('SELECT * FROM memories WHERE id = ?').bind(memId).first();
-  const me = await env.DB.prepare('SELECT points FROM users WHERE id = ?').bind(id).first();
-  return json({ ok: true, item: row, points: me.points });
+  const updated = await env.DB.prepare('SELECT points FROM users WHERE id = ?').bind(id).first();
+  return json({ ok: true, item: row, points: updated.points });
 }
