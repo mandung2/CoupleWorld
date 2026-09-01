@@ -5,5 +5,12 @@
   "compatibility_date": "2026-08-14",
   "assets": {
     "directory": "./"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "coupleworld-db",
+      "database_id": "3b27b9bc-c646-4fd3-8c4a-f55cf726c560"
+    }
+  ]
 }

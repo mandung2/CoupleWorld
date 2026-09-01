@@ -8,9 +8,6 @@ export async function onRequestPost({ request, env }) {
   const me = await env.DB.prepare('SELECT session_token FROM users WHERE id = ?').bind(id).first();
   if (!me || me.session_token !== token) return json({ ok: false, items: [] });
 
-  const { results } = await env.DB.prepare(
-    'SELECT id, title, body, status, reply FROM inquiries WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC'
-  ).bind(id).all();
-
-  return json({ ok: true, items: results });
+  const { results } = await env.DB.prepare('SELECT item_name FROM user_items WHERE user_id = ?').bind(id).all();
+  return json({ ok: true, items: results.map(r => r.item_name) });
 }

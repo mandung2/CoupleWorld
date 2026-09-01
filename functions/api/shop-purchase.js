@@ -21,6 +21,7 @@ export async function onRequestPost({ request, env }) {
     env.DB.prepare('UPDATE shop_items SET sold = sold + 1, revenue = revenue + ? WHERE item_id = ?')
       .bind(item.price, item.item_id),
     env.DB.prepare('UPDATE users SET points = points - ? WHERE id = ?').bind(item.price, id),
+    env.DB.prepare('INSERT OR IGNORE INTO user_items (user_id, item_name) VALUES (?, ?)').bind(id, itemName),
   ]);
 
   const row = await env.DB.prepare('SELECT points FROM users WHERE id = ?').bind(id).first();

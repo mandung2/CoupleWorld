@@ -4,11 +4,11 @@ export async function onRequestPost({ request, env }) {
   const b = await readJson(request);
   const id = (b.id || '').trim();
   const token = b.token || '';
-  const memoryId = b.memoryId;
+  const mailId = b.mailId;
 
   const me = await env.DB.prepare('SELECT session_token FROM users WHERE id = ?').bind(id).first();
   if (!me || me.session_token !== token) return json({ ok: false, msg: '[시스템] 로그인이 필요합니다.' });
 
-  await env.DB.prepare("UPDATE memories SET deleted_at = datetime('now') WHERE id = ? AND author_id = ?").bind(memoryId, id).run();
+  await env.DB.prepare("UPDATE mail SET deleted_at = datetime('now') WHERE id = ? AND to_id = ?").bind(mailId, id).run();
   return json({ ok: true });
 }

@@ -38,3 +38,9 @@ export function validDate(s) {
   const p = String(s || '').split('.').map(x => parseInt(x, 10));
   return p.length === 3 && p.every(n => !isNaN(n));
 }
+
+// Stable key for a couple pair regardless of which side calls in — used to
+// share world-map visited-region data between both linked partners.
+export function coupleKey(idA, idB) {
+  return [idA, idB].sort().join('::');
+}

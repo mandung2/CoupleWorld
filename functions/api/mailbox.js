@@ -8,12 +8,14 @@ export async function onRequestPost({ request, env }) {
   const me = await env.DB.prepare('SELECT id, session_token FROM users WHERE id = ?').bind(id).first();
   if (!me || me.session_token !== token) return json({ ok: false, items: [] });
 
-  const { results } = await env.DB.prepare('SELECT * FROM mail WHERE to_id = ? ORDER BY created_at').bind(id).all();
+  const { results } = await env.DB.prepare(
+    'SELECT * FROM mail WHERE to_id = ? AND deleted_at IS NULL ORDER BY created_at DESC'
+  ).bind(id).all();
   return json({
     ok: true,
     items: results.map(r => ({
       id: r.id, type: r.type || 'couple_request', fromId: r.from_id, fromNickname: r.from_nickname,
-      startDate: r.start_date, title: r.title, body: r.body
+      startDate: r.start_date, title: r.title, body: r.body, status: r.status || 'pending'
     }))
   });
 }

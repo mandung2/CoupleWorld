@@ -11,7 +11,7 @@ export async function onRequestPost({ request, env }) {
   const ids = me.partner_id ? [id, me.partner_id] : [id];
   const placeholders = ids.map(() => '?').join(', ');
   const { results } = await env.DB.prepare(
-    `SELECT * FROM memories WHERE author_id IN (${placeholders}) ORDER BY created_at DESC`
+    `SELECT * FROM memories WHERE author_id IN (${placeholders}) AND deleted_at IS NULL ORDER BY created_at DESC`
   ).bind(...ids).all();
 
   return json({ ok: true, items: results });

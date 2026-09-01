@@ -16,7 +16,7 @@ export async function onRequestPost({ request, env }) {
   await env.DB.batch([
     env.DB.prepare('UPDATE users SET partner_id = ?, start_date = ?, linked = 1 WHERE id = ?').bind(mail.from_id, mail.start_date, id),
     env.DB.prepare('UPDATE users SET partner_id = ?, start_date = ?, linked = 1 WHERE id = ?').bind(id, mail.start_date, mail.from_id),
-    env.DB.prepare('DELETE FROM mail WHERE id = ?').bind(mailId)
+    env.DB.prepare("UPDATE mail SET status = 'accepted' WHERE id = ?").bind(mailId)
   ]);
 
   const partner = await env.DB.prepare('SELECT avatar FROM users WHERE id = ?').bind(mail.from_id).first();
