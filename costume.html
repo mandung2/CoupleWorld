@@ -1173,7 +1173,7 @@ async function saveAndExit(){
     var res=await fetch("/api/avatar-update",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({id:id,token:token,avatar:avatar})
+      body:JSON.stringify({id:id,token:token,avatar:avatar,code:encode()})
     });
     var data=await res.json().catch(function(){ return {ok:false}; });
     if(!data.ok){
@@ -1423,7 +1423,9 @@ function buildBg(){
 var CODE_KEYS=["gender","hair","eyes","mouth","top","bottom","shoe","acc","bg",
   "hairSize","hairX","hairY","eyeSize","eyeX","eyeY","mouthSize","mouthX","mouthY",
   "topSize","topX","topY","bottomSize","bottomX","bottomY","shoeSize","shoeX","shoeY","shoeGap",
-  "accSize","accX","accY","hairColor","topColor","shoeColor"];
+  "accSize","accX","accY","hairColor","topColor","shoeColor",
+  "topCustom","bottomCustom","shoeCustom"];
+var NULLABLE_STRING_KEYS={topColor:1,shoeColor:1,topCustom:1,bottomCustom:1,shoeCustom:1};
 function encode(){ return CODE_KEYS.map(function(k){ return ""+S[k]; }).join("-"); }
 function decode(str){
   var p=String(str).trim().split("-");
@@ -1431,7 +1433,7 @@ function decode(str){
   var n={};
   for(var i=0;i<CODE_KEYS.length;i++){
     var k=CODE_KEYS[i], v=p[i];
-    if(k==="topColor"||k==="shoeColor"){ n[k]=(v==="null"?null:v); }
+    if(NULLABLE_STRING_KEYS[k]){ n[k]=(v==="null"?null:v); }
     else if(k==="gender"||k==="bg"||k==="hairColor"){ n[k]=v; }
     else { n[k]=parseInt(v,10); if(isNaN(n[k])) return false; }
   }
@@ -1444,6 +1446,13 @@ function decode(str){
   if(n.eyes>=eyesN) return false;
   for(var k2 in n) S[k2]=n[k2];
   for(var pk in PAUSED_SLOT_KEYS) S[pk]=-1;
+  // topCustom/bottomCustom/shoeCustom carry each wardrobe pick's own fixed
+  // position (see CUSTOM_POS) -- a plain field copy above doesn't re-apply
+  // that, so a decoded code would otherwise restore the right item at
+  // whatever position the slider happened to be at instead of its own spot.
+  if(n.topCustom) applyCustomPos(n.topCustom);
+  if(n.bottomCustom) applyCustomPos(n.bottomCustom);
+  if(n.shoeCustom) applyCustomPos(n.shoeCustom);
   return true;
 }
 function save(){ try{ localStorage.setItem("dotmate", encode()); }catch(e){} }
@@ -1476,7 +1485,7 @@ document.getElementById("btnLoad").onclick=function(){
 
 document.getElementById("btnSave").onclick=saveAndExit;
 
-(function(){
+(async function(){
   var id=sessionStorage.getItem("cw-id")||localStorage.getItem("cw-id");
   var token=sessionStorage.getItem("cw-token")||localStorage.getItem("cw-token");
   if(!id||!token){
@@ -1487,8 +1496,26 @@ document.getElementById("btnSave").onclick=saveAndExit;
       +'</div>';
     return;
   }
-  load();
-  loadCustomSelection();
+  // The account's last SAVED look (server-side) wins over whatever's in this
+  // browser's localStorage -- otherwise re-opening on a different device, or
+  // after clearing site data, silently threw away a saved costume. Only
+  // fall back to the local in-progress state when nothing's been saved yet.
+  var restoredFromServer=false;
+  try{
+    var res=await fetch("/api/session",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id:id,token:token})
+    });
+    var data=await res.json();
+    if(data.ok && data.user && data.user.costumeCode && decode(data.user.costumeCode)){
+      restoredFromServer=true;
+    }
+  }catch(e){}
+  if(!restoredFromServer){
+    load();
+    loadCustomSelection();
+  }
   buildTabs(); buildPane(); buildSliders(); buildBg(); render();
   fitDoll();
   window.addEventListener("resize", fitDoll);

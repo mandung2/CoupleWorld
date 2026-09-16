@@ -24,7 +24,8 @@ export async function onRequestPost({ request, env }) {
     user: {
       id: row.id, nickname: row.nickname, gender: row.gender, birth: row.birth,
       partnerId: row.partner_id, partnerNickname, startDate: row.start_date, linked: !!row.linked,
-      points: row.points || 0, avatar: row.avatar || null, partnerAvatar
+      points: row.points || 0, avatar: row.avatar || null, partnerAvatar,
+      costumeCode: row.costume_code || null
     }
   });
 }
