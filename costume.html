@@ -1055,7 +1055,15 @@ function loadImg(src){
   if(IMG_CACHE[src]) return IMG_CACHE[src];
   var p=new Promise(function(resolve){
     var img=new Image();
-    img.onload=function(){ resolve(img); };
+    img.onload=function(){
+      // onload can fire before the bitmap is fully decoded on some mobile
+      // Safari versions -- drawImage right after sometimes then paints a
+      // partial/truncated frame (seen as the eyes/mouth list rows showing
+      // just a cropped sliver). decode() resolves only once the image is
+      // actually ready to draw.
+      if(img.decode){ img.decode().then(function(){ resolve(img); }).catch(function(){ resolve(img); }); }
+      else{ resolve(img); }
+    };
     img.onerror=function(){ resolve(null); };
     img.src=src;
   });
