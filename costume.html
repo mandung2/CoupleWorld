@@ -1327,26 +1327,48 @@ function buildPane(){
     // Built-in art, not a user upload, so upscaling past native size is
     // safe -- pixelated rendering keeps it crisp instead of blurry.
     var s = isEyesMouth ? Math.min(130/it.w, 50/it.h, 3.2) : Math.min(58/it.w, 50/it.h, 1);
-    var i=document.createElement("i");
-    i.style.width=Math.round(it.w*s)+"px";
-    i.style.height=Math.round(it.h*s)+"px";
-    // Hair/shoe thumbnails preview the CURRENT color pick, not each style's
-    // own baked sprite color -- otherwise every swatch looks like a
-    // different color even though they'd all render the same tint once worn.
-    var tintUrl = activeSlot==="hair" ? tintedHairURL(sheetKey,it,S.hairColor)
-                 : activeSlot==="shoe" ? tintedShoeURL(it,S.shoeColor)
-                 : null;
-    if(tintUrl){
-      i.style.backgroundImage="url("+tintUrl+")";
-      i.style.backgroundSize=Math.round(it.w*s)+"px "+Math.round(it.h*s)+"px";
-      i.style.backgroundPosition="0 0";
+    if(isEyesMouth){
+      // Eyes/mouth crops were rendered via a huge scaled-down
+      // background-image (the whole sheet as backgroundSize, offset by
+      // backgroundPosition) -- some mobile Safari versions fail to paint
+      // that at these tiny effective tile sizes and just leave it blank.
+      // A <canvas> + drawImage crop doesn't go through that code path at
+      // all, so it draws reliably regardless of how small the slice is.
+      var cw=Math.round(it.w*s), ch=Math.round(it.h*s);
+      var cvs=document.createElement("canvas");
+      cvs.width=cw; cvs.height=ch;
+      cvs.style.width=cw+"px"; cvs.style.height=ch+"px";
+      cvs.style.marginBottom="8px";
+      cvs.style.imageRendering="pixelated";
+      b.appendChild(cvs);
+      loadImg(SRC[sheetKey]).then(function(img){
+        if(!img) return;
+        var cctx=cvs.getContext("2d");
+        cctx.imageSmoothingEnabled=false;
+        cctx.drawImage(img, it.x, it.y, it.w, it.h, 0, 0, cw, ch);
+      });
     }else{
-      i.style.backgroundImage="url("+SRC[sheetKey]+")";
-      i.style.backgroundSize=Math.round(SHEETS[sheetKey].w*s)+"px "+Math.round(SHEETS[sheetKey].h*s)+"px";
-      i.style.backgroundPosition=(-Math.round(it.x*s))+"px "+(-Math.round(it.y*s))+"px";
+      var i=document.createElement("i");
+      i.style.width=Math.round(it.w*s)+"px";
+      i.style.height=Math.round(it.h*s)+"px";
+      // Hair/shoe thumbnails preview the CURRENT color pick, not each style's
+      // own baked sprite color -- otherwise every swatch looks like a
+      // different color even though they'd all render the same tint once worn.
+      var tintUrl = activeSlot==="hair" ? tintedHairURL(sheetKey,it,S.hairColor)
+                   : activeSlot==="shoe" ? tintedShoeURL(it,S.shoeColor)
+                   : null;
+      if(tintUrl){
+        i.style.backgroundImage="url("+tintUrl+")";
+        i.style.backgroundSize=Math.round(it.w*s)+"px "+Math.round(it.h*s)+"px";
+        i.style.backgroundPosition="0 0";
+      }else{
+        i.style.backgroundImage="url("+SRC[sheetKey]+")";
+        i.style.backgroundSize=Math.round(SHEETS[sheetKey].w*s)+"px "+Math.round(SHEETS[sheetKey].h*s)+"px";
+        i.style.backgroundPosition=(-Math.round(it.x*s))+"px "+(-Math.round(it.y*s))+"px";
+      }
+      i.style.marginBottom="8px";
+      b.appendChild(i);
     }
-    i.style.marginBottom="8px";
-    b.appendChild(i);
     var cap=document.createElement("span");
     cap.className="cap";
     cap.textContent = names ? names[idx] : (def.label+" "+(n+1<10?"0":"")+(n+1));
