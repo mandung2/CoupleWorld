@@ -212,6 +212,7 @@ h1{
   max-height:min(56vh,520px);
   overflow-y:auto;
 }
+.grid.eyesMouth{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
 .thumb{
   position:relative;
   aspect-ratio:1;
@@ -223,6 +224,7 @@ h1{
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
 }
+.thumb.eyesMouth{aspect-ratio:2/1}
 .thumb:hover{border-color:var(--line-strong)}
 .thumb[aria-pressed="true"]{border-color:var(--rose);border-width:2px;background:var(--rose-soft)}
 .thumb i{display:block;background-repeat:no-repeat;image-rendering:pixelated}
@@ -1292,10 +1294,17 @@ function buildPane(){
 
   var grid=document.getElementById("grid");
   grid.textContent="";
+  // Eyes/mouth sprites are naturally wide, short strips (a mouth can be
+  // 6x wider than tall) -- the square thumb grid used everywhere else
+  // squeezes them down to a barely-visible sliver, which is exactly what
+  // made picking a shape by eye impossible on a phone. Give this pane
+  // wider, shorter tiles so those sprites render at a legible size.
+  var isEyesMouth = activeSlot==="eyes" || activeSlot==="mouth";
+  grid.classList.toggle("eyesMouth", isEyesMouth);
 
   if(def.optional){
     var nb=document.createElement("button");
-    nb.className="thumb none"; nb.type="button";
+    nb.className="thumb none"+(isEyesMouth?" eyesMouth":""); nb.type="button";
     var noneActive = S[activeSlot]<0 && !S[activeSlot+"Custom"];
     nb.setAttribute("aria-pressed", noneActive?"true":"false");
     nb.textContent="없음";
@@ -1313,9 +1322,11 @@ function buildPane(){
   list.forEach(function(idx,n){
     var it=SHEETS[sheetKey].items[idx];
     var b=document.createElement("button");
-    b.className="thumb"; b.type="button";
+    b.className="thumb"+(isEyesMouth?" eyesMouth":""); b.type="button";
     b.setAttribute("aria-pressed", S[activeSlot]===idx?"true":"false");
-    var s=Math.min(58/it.w, 50/it.h, 1);
+    // Built-in art, not a user upload, so upscaling past native size is
+    // safe -- pixelated rendering keeps it crisp instead of blurry.
+    var s = isEyesMouth ? Math.min(130/it.w, 50/it.h, 3.2) : Math.min(58/it.w, 50/it.h, 1);
     var i=document.createElement("i");
     i.style.width=Math.round(it.w*s)+"px";
     i.style.height=Math.round(it.h*s)+"px";
