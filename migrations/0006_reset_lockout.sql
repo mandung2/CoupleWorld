@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN reset_fail_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN reset_fail_at TEXT;
