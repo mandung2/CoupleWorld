@@ -102,31 +102,25 @@ h1{
 .stageCol{position:sticky;top:20px;display:flex;flex-direction:column;gap:12px}
 @media (max-width:820px){.stageCol{position:static}}
 
-/* Eyes/mouth on narrow screens only: a small square thumbnail can't show
-   a wide, short sprite at a legible size no matter how it's scaled, so
-   below the same breakpoint everything else already goes single-column
-   at, list these two panes as full-width rows (icon left, name right)
-   instead. Desktop keeps the plain tile grid untouched. */
+/* Eyes/mouth have no name label (see buildPane -- the shape itself is
+   the only thing that identifies one, so the caption was just noise) --
+   just the icon, sized to actually be readable. Desktop: same box the
+   58/50 formula used for every other icon always gave these, restored
+   here as a straight max-width/height on the (now much higher-res)
+   pre-cropped image, since letting it fill the square tile like the
+   grid's other categories do made these look blown up. Mobile: no
+   competing label to leave room for any more, so each row can push the
+   icon out to most of the screen's width. */
+.thumb.eyesMouth img{display:block;width:auto;height:auto;max-width:58px;max-height:50px;image-rendering:pixelated}
 @media (max-width:820px){
-  .grid.eyesMouth{display:flex;flex-direction:column;gap:6px;padding:10px 12px 14px}
+  .grid.eyesMouth{display:flex;flex-direction:column;gap:10px;padding:10px 12px 14px}
   .thumb.eyesMouth{
     aspect-ratio:auto;
     width:100%;
     height:auto;
-    justify-content:flex-start;
-    gap:14px;
-    padding:8px 14px;
+    padding:14px 10px;
   }
-  .thumb.eyesMouth .cap{
-    position:static;
-    background:none;
-    padding:0;
-    font-size:13px;
-    color:var(--ink);
-    text-align:left;
-    white-space:normal;
-    flex:1;
-  }
+  .thumb.eyesMouth img{width:90%;max-width:420px;height:auto;max-height:none}
 }
 
 .stageBox{
@@ -1377,12 +1371,6 @@ function buildPane(){
       var im=document.createElement("img");
       im.src=pre.u;
       im.alt="";
-      im.style.width=pre.w+"px";
-      im.style.height=pre.h+"px";
-      im.style.maxWidth="100%";
-      im.style.maxHeight="100%";
-      im.style.flex="none";
-      im.style.imageRendering="pixelated";
       b.appendChild(im);
     }else{
       var s=Math.min(58/it.w, 50/it.h, 1);
@@ -1407,11 +1395,19 @@ function buildPane(){
       i.style.marginBottom="8px";
       b.appendChild(i);
     }
-    var cap=document.createElement("span");
-    cap.className="cap";
-    cap.textContent = names ? names[idx] : (def.label+" "+(n+1<10?"0":"")+(n+1));
-    b.appendChild(cap);
-    b.title=cap.textContent;
+    var capText = names ? names[idx] : (def.label+" "+(n+1<10?"0":"")+(n+1));
+    if(isEyesMouth){
+      // No visible label -- the shape is the only thing that tells these
+      // apart -- but keep the name reachable for hover/screen readers.
+      b.title=capText;
+      b.setAttribute("aria-label", capText);
+    }else{
+      var cap=document.createElement("span");
+      cap.className="cap";
+      cap.textContent=capText;
+      b.appendChild(cap);
+      b.title=capText;
+    }
     b.onclick=function(){
       S[activeSlot]=idx; S[activeSlot+"Custom"]=null;
       if(activeSlot==="hair"){ applyHairPos(); buildSliders(); }
