@@ -212,7 +212,11 @@ h1{
   max-height:min(56vh,520px);
   overflow-y:auto;
 }
-.grid.eyesMouth{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+/* Eyes/mouth: a small square thumbnail can't show a wide, short sprite at
+   a legible size no matter how it's scaled -- so instead of a grid of
+   tiles, list these two panes as full-width rows (icon left, name right)
+   that scroll like any list. Everything else keeps the tile grid. */
+.grid.eyesMouth{display:flex;flex-direction:column;gap:6px;padding:10px 12px 14px}
 .thumb{
   position:relative;
   aspect-ratio:1;
@@ -224,7 +228,14 @@ h1{
   display:flex;align-items:center;justify-content:center;
   overflow:hidden;
 }
-.thumb.eyesMouth{aspect-ratio:2/1}
+.thumb.eyesMouth{
+  aspect-ratio:auto;
+  width:100%;
+  height:auto;
+  justify-content:flex-start;
+  gap:14px;
+  padding:8px 14px;
+}
 .thumb:hover{border-color:var(--line-strong)}
 .thumb[aria-pressed="true"]{border-color:var(--rose);border-width:2px;background:var(--rose-soft)}
 .thumb i{display:block;background-repeat:no-repeat;image-rendering:pixelated}
@@ -236,6 +247,16 @@ h1{
   color:var(--ink-2);
   text-align:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.thumb.eyesMouth .cap{
+  position:static;
+  background:none;
+  padding:0;
+  font-size:13px;
+  color:var(--ink);
+  text-align:left;
+  white-space:normal;
+  flex:1;
 }
 .thumb.none{font-size:12px;color:var(--muted)}
 .thumb.uploadTile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-style:dashed;color:var(--muted);font-size:11px}
@@ -1326,7 +1347,7 @@ function buildPane(){
     b.setAttribute("aria-pressed", S[activeSlot]===idx?"true":"false");
     // Built-in art, not a user upload, so upscaling past native size is
     // safe -- pixelated rendering keeps it crisp instead of blurry.
-    var s = isEyesMouth ? Math.min(130/it.w, 50/it.h, 3.2) : Math.min(58/it.w, 50/it.h, 1);
+    var s = isEyesMouth ? Math.min(220/it.w, 72/it.h, 4.5) : Math.min(58/it.w, 50/it.h, 1);
     if(isEyesMouth){
       // Eyes/mouth crops were rendered via a huge scaled-down
       // background-image (the whole sheet as backgroundSize, offset by
@@ -1334,11 +1355,13 @@ function buildPane(){
       // that at these tiny effective tile sizes and just leave it blank.
       // A <canvas> + drawImage crop doesn't go through that code path at
       // all, so it draws reliably regardless of how small the slice is.
+      // Listed as a full-width row (see .thumb.eyesMouth), not a square
+      // tile, so the icon sits left of the name with room to be legible.
       var cw=Math.round(it.w*s), ch=Math.round(it.h*s);
       var cvs=document.createElement("canvas");
       cvs.width=cw; cvs.height=ch;
       cvs.style.width=cw+"px"; cvs.style.height=ch+"px";
-      cvs.style.marginBottom="8px";
+      cvs.style.flex="none";
       cvs.style.imageRendering="pixelated";
       b.appendChild(cvs);
       loadImg(SRC[sheetKey]).then(function(img){
