@@ -1,4 +1,4 @@
-import { json, readJson } from '../_lib.js';
+import { json, readJson, saveImage, deleteImage } from '../_lib.js';
 
 export async function onRequestPost({ request, env }) {
   const b = await readJson(request);
@@ -14,13 +14,18 @@ export async function onRequestPost({ request, env }) {
   if (!avatar) return json({ ok: false, msg: '[시스템] 사진을 선택하세요.' });
   if (avatar.length > 2_000_000) return json({ ok: false, msg: '[시스템] 사진 용량이 너무 큽니다.' });
 
-  const me = await env.DB.prepare('SELECT session_token FROM users WHERE id = ?').bind(id).first();
+  const me = await env.DB.prepare('SELECT session_token, avatar FROM users WHERE id = ?').bind(id).first();
   if (!me || me.session_token !== token) return json({ ok: false, msg: '[시스템] 로그인이 필요합니다.' });
 
+  // 사진은 R2에 올리고 D1에는 이미지 URL만 저장
+  const avatarUrl = await saveImage(env, request, avatar, 'avatars');
+  if (!avatarUrl) return json({ ok: false, msg: '[시스템] 지원하지 않는 사진 형식입니다.' });
+
   if (code !== undefined) {
-    await env.DB.prepare('UPDATE users SET avatar = ?, costume_code = ? WHERE id = ?').bind(avatar, code, id).run();
+    await env.DB.prepare('UPDATE users SET avatar = ?, costume_code = ? WHERE id = ?').bind(avatarUrl, code, id).run();
   } else {
-    await env.DB.prepare('UPDATE users SET avatar = ? WHERE id = ?').bind(avatar, id).run();
+    await env.DB.prepare('UPDATE users SET avatar = ? WHERE id = ?').bind(avatarUrl, id).run();
   }
-  return json({ ok: true, avatar });
+  await deleteImage(env, me.avatar);
+  return json({ ok: true, avatar: avatarUrl });
 }

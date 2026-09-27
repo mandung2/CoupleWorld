@@ -1,4 +1,4 @@
-import { json, readJson } from '../_lib.js';
+import { json, readJson, saveImage } from '../_lib.js';
 
 export async function onRequestPost({ request, env }) {
   const b = await readJson(request);
@@ -16,11 +16,14 @@ export async function onRequestPost({ request, env }) {
   const me = await env.DB.prepare('SELECT session_token FROM users WHERE id = ?').bind(id).first();
   if (!me || me.session_token !== token) return json({ ok: false, msg: '[시스템] 로그인이 필요합니다.' });
 
+  // 사진은 R2에 올리고 D1에는 이미지 URL만 저장
+  const photoUrl = photo ? await saveImage(env, request, photo, 'memories') : null;
+
   const memId = crypto.randomUUID();
   await env.DB.batch([
     env.DB.prepare(
       'INSERT INTO memories (id, author_id, date, place, title, body, photo) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(memId, id, date, place, title, body, photo),
+    ).bind(memId, id, date, place, title, body, photoUrl),
     env.DB.prepare('UPDATE users SET points = points + 50 WHERE id = ?').bind(id),
   ]);
 
