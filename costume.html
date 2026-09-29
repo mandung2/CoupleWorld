@@ -1553,7 +1553,16 @@ var CODE_KEYS=["gender","hair","eyes","mouth","top","bottom","shoe","acc","bg",
 var NULLABLE_STRING_KEYS={topColor:1,shoeColor:1,topCustom:1,bottomCustom:1,shoeCustom:1};
 function encode(){ return CODE_KEYS.map(function(k){ return ""+S[k]; }).join("-"); }
 function decode(str){
-  var p=String(str).trim().split("-");
+  // Values are joined with "-", so a negative number (e.g. eyeY -23, an
+  // unselected slot -1) shows up as an empty token followed by its digits
+  // ("20--1" -> "20","","1"). Glue those back together before parsing --
+  // otherwise every real code had the wrong field count and silently failed,
+  // which is why the editor always fell back to the defaults.
+  var raw=String(str).trim().split("-"), p=[];
+  for(var j=0;j<raw.length;j++){
+    if(raw[j]==="" && j+1<raw.length){ p.push("-"+raw[j+1]); j++; }
+    else p.push(raw[j]);
+  }
   if(p.length!==CODE_KEYS.length) return false;
   var n={};
   for(var i=0;i<CODE_KEYS.length;i++){
@@ -1571,13 +1580,9 @@ function decode(str){
   if(n.eyes>=eyesN) return false;
   for(var k2 in n) S[k2]=n[k2];
   for(var pk in PAUSED_SLOT_KEYS) S[pk]=-1;
-  // topCustom/bottomCustom/shoeCustom carry each wardrobe pick's own fixed
-  // position (see CUSTOM_POS) -- a plain field copy above doesn't re-apply
-  // that, so a decoded code would otherwise restore the right item at
-  // whatever position the slider happened to be at instead of its own spot.
-  if(n.topCustom) applyCustomPos(n.topCustom);
-  if(n.bottomCustom) applyCustomPos(n.bottomCustom);
-  if(n.shoeCustom) applyCustomPos(n.shoeCustom);
+  // The code already carries the exact size/position the user left each
+  // custom item at, so don't re-apply CUSTOM_POS here -- that would snap a
+  // saved look back to the item's default spot instead of what was saved.
   return true;
 }
 function save(){ try{ localStorage.setItem("dotmate", encode()); }catch(e){} }
