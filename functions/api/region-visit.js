@@ -1,4 +1,4 @@
-import { json, readJson, coupleKey } from '../_lib.js';
+import { json, readJson, coupleKey, tooLong } from '../_lib.js';
 
 export async function onRequestPost({ request, env }) {
   const b = await readJson(request);
@@ -10,6 +10,8 @@ export async function onRequestPost({ request, env }) {
   const text = (b.text || '').trim();
 
   if (!unit) return json({ ok: false, msg: '[시스템] 지역 정보가 없습니다.' });
+  const over = tooLong({ place: unit, date, title, body: text });
+  if (over) return json({ ok: false, msg: over });
 
   const me = await env.DB.prepare('SELECT session_token, partner_id FROM users WHERE id = ?').bind(id).first();
   if (!me || me.session_token !== token) return json({ ok: false, msg: '[시스템] 로그인이 필요합니다.' });

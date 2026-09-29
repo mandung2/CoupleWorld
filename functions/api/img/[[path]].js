@@ -10,6 +10,8 @@ export async function onRequestGet({ env, params }) {
       'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream',
       ETag: obj.httpEtag,
       'Cache-Control': 'public, max-age=31536000, immutable',
+      // 이미지로 선언된 파일을 브라우저가 다른 형식(HTML 등)으로 추측해 열지 않도록
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }

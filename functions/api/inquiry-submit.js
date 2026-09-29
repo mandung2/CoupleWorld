@@ -1,4 +1,4 @@
-import { json, readJson, saveImage } from '../_lib.js';
+import { json, readJson, saveImage, tooLong } from '../_lib.js';
 
 export async function onRequestPost({ request, env }) {
   const b = await readJson(request);
@@ -9,6 +9,8 @@ export async function onRequestPost({ request, env }) {
   const photo = typeof b.photo === 'string' && b.photo.startsWith('data:image/') ? b.photo : null;
 
   if (!title || !body) return json({ ok: false, msg: '[시스템] 제목과 내용을 입력하세요.' });
+  const over = tooLong({ title, body });
+  if (over) return json({ ok: false, msg: over });
   if (photo && photo.length > 2_000_000) return json({ ok: false, msg: '[시스템] 사진 용량이 너무 큽니다.' });
 
   const me = await env.DB.prepare('SELECT nickname, session_token FROM users WHERE id = ?').bind(id).first();

@@ -7,6 +7,7 @@ export async function onRequestPost({ request, env }) {
   const body = (b.body || '').trim();
 
   if (!body) return json({ ok: false, msg: '[시스템] 메시지를 입력하세요.' });
+  if (body.length > 300) return json({ ok: false, msg: '[시스템] 메시지는 300자 이내로 입력하세요.' });
 
   const me = await env.DB.prepare('SELECT session_token, partner_id FROM users WHERE id = ?').bind(id).first();
   if (!me || me.session_token !== token) return json({ ok: false, msg: '[시스템] 로그인이 필요합니다.' });

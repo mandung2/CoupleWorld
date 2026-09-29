@@ -1,4 +1,4 @@
-import { json, readJson, saveImage, deleteImage } from '../_lib.js';
+import { json, readJson, saveImage, deleteImage, tooLong } from '../_lib.js';
 
 export async function onRequestPost({ request, env }) {
   const b = await readJson(request);
@@ -11,6 +11,8 @@ export async function onRequestPost({ request, env }) {
   const body = (b.body || '').trim();
   const photo = typeof b.photo === 'string' && b.photo.startsWith('data:image/') ? b.photo : null;
 
+  const over = tooLong({ date, place, title, body });
+  if (over) return json({ ok: false, msg: over });
   if (photo && photo.length > 2_000_000) return json({ ok: false, msg: '[시스템] 사진 용량이 너무 큽니다.' });
 
   const me = await env.DB.prepare('SELECT session_token FROM users WHERE id = ?').bind(id).first();

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*",
+    "/migrations/*",
+    "/wrangler.jsonc",
+    "/package.json",
+    "/package-lock.json",
+    "/.gitignore",
+    "/.assetsignore",
+    "/_routes.json"
+  ],
+  "exclude": []
+}

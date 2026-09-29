@@ -1,7 +1,36 @@
+// 예전 방식(SHA-256 한 번) — 기존 계정 확인용으로만 남겨둡니다.
 export async function hashPassword(password, salt) {
   const enc = new TextEncoder();
   const digest = await crypto.subtle.digest('SHA-256', enc.encode(salt + ':' + password));
   return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 새 방식: PBKDF2-SHA256 (Workers 최대 반복 횟수 100,000).
+// 저장 형식은 "pbkdf2$반복횟수$salt$hash", 예전 형식은 "salt$hash".
+const PBKDF2_ITER = 100000;
+
+async function pbkdf2(password, salt, iter) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(salt), iterations: iter }, key, 256
+  );
+  return [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function makePasswordHash(password) {
+  const salt = randomHex(16);
+  return `pbkdf2$${PBKDF2_ITER}$${salt}$${await pbkdf2(password, salt, PBKDF2_ITER)}`;
+}
+
+// { ok, legacy } — legacy가 true면 로그인 성공 후 새 방식으로 다시 저장합니다.
+export async function checkPassword(password, stored) {
+  const parts = String(stored || '').split('$');
+  if (parts[0] === 'pbkdf2' && parts.length === 4) {
+    return { ok: (await pbkdf2(password, parts[2], parseInt(parts[1], 10))) === parts[3], legacy: false };
+  }
+  if (parts.length === 2) return { ok: (await hashPassword(password, parts[0])) === parts[1], legacy: true };
+  return { ok: false, legacy: false };
 }
 
 export function randomHex(len) {
@@ -32,6 +61,20 @@ export function validPassword(pw) {
     specials++;
   }
   return specials >= 2;
+}
+
+// 영문·숫자·밑줄 3~20자
+export function validId(id) {
+  return /^[A-Za-z0-9_]{3,20}$/.test(String(id || ''));
+}
+
+// 글 길이 제한 — 초과하면 안내 문구, 괜찮으면 null
+export const LIMITS = { date: 20, place: 50, title: 50, body: 2000 };
+export function tooLong(fields) {
+  for (const [key, value] of Object.entries(fields)) {
+    if (String(value || '').length > LIMITS[key]) return `[시스템] 글자 수가 너무 많아요. (최대 ${LIMITS[key]}자)`;
+  }
+  return null;
 }
 
 export function validDate(s) {
@@ -76,4 +119,34 @@ export async function deleteImage(env, url) {
   } catch (e) {
     // 파일 삭제 실패는 사용자 동작을 막지 않음
   }
+}
+
+// ---- 시도 횟수 잠금 -------------------------------------------------------
+// count/at 은 users 테이블의 *_fail_count / *_fail_at 값. D1 datetime('now')는 UTC.
+export function isLockedOut(count, at, threshold, ms) {
+  if ((count || 0) < threshold || !at) return false;
+  return Date.now() - new Date(String(at).replace(' ', 'T') + 'Z').getTime() < ms;
+}
+
+// ---- 비밀번호 찾기 본인 확인 ----------------------------------------------
+// verify-identity와 reset-password가 같은 잠금 카운트를 쓰도록 한곳에 둡니다.
+// 닉네임은 월드 채팅에 공개되고 생년월일은 지인이 알 수 있어 약한 정보이므로,
+// 여러 번 틀리면 한동안 막습니다.
+const RESET_LOCK_THRESHOLD = 5;
+const RESET_LOCK_MS = 15 * 60 * 1000;
+
+export async function checkResetIdentity(env, id, nickname, birth) {
+  const fail = { ok: false, msg: '[시스템] 일치하는 계정을 찾을 수 없습니다.' };
+  const user = await env.DB.prepare('SELECT nickname, birth, reset_fail_count, reset_fail_at FROM users WHERE id = ?')
+    .bind(id).first();
+  if (!user) return fail;
+  if (isLockedOut(user.reset_fail_count, user.reset_fail_at, RESET_LOCK_THRESHOLD, RESET_LOCK_MS)) {
+    return { ok: false, msg: '[시스템] 본인 확인 시도가 너무 많습니다. 15분 후 다시 시도해주세요.' };
+  }
+  if (user.nickname !== nickname || user.birth !== birth) {
+    await env.DB.prepare("UPDATE users SET reset_fail_count = ?, reset_fail_at = datetime('now') WHERE id = ?")
+      .bind((user.reset_fail_count || 0) + 1, id).run();
+    return fail;
+  }
+  return { ok: true };
 }
