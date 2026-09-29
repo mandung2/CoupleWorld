@@ -121,6 +121,51 @@ export async function deleteImage(env, url) {
   }
 }
 
+// ---- 기록 사진 (최대 5장) ---------------------------------------------------
+// memories.photos 에 사진 URL 배열(JSON)을 저장하고, memories.photo 에는 대표(첫 번째)
+// 사진을 같이 넣어 둡니다. photos 가 없는 예전 기록은 photo 한 장짜리로 봅니다.
+export const MAX_MEMORY_PHOTOS = 5;
+const MAX_PHOTO_LEN = 2_000_000;
+
+export function memoryPhotos(row) {
+  try {
+    const a = JSON.parse(row.photos || 'null');
+    if (Array.isArray(a)) return a.filter((x) => typeof x === 'string');
+  } catch (e) {}
+  return row.photo ? [row.photo] : [];
+}
+
+export function memoryOut(row) {
+  return row ? { ...row, photos: memoryPhotos(row) } : row;
+}
+
+// 화면이 보낸 사진 목록을 검사합니다. 각 항목은 새 사진(data URL)이거나,
+// keep 목록(이미 저장된 이 기록의 사진 URL) 중 하나여야 합니다.
+export function checkPhotoList(list, keep = []) {
+  if (!Array.isArray(list)) return { msg: '[시스템] 사진 목록이 올바르지 않습니다.' };
+  if (list.length > MAX_MEMORY_PHOTOS) return { msg: `[시스템] 사진은 최대 ${MAX_MEMORY_PHOTOS}장까지 올릴 수 있습니다.` };
+  for (const p of list) {
+    if (typeof p !== 'string') return { msg: '[시스템] 사진 목록이 올바르지 않습니다.' };
+    if (p.startsWith('data:image/')) {
+      if (p.length > MAX_PHOTO_LEN) return { msg: '[시스템] 사진 용량이 너무 큽니다.' };
+    } else if (!keep.includes(p)) {
+      return { msg: '[시스템] 사진 목록이 올바르지 않습니다.' };
+    }
+  }
+  return { ok: true };
+}
+
+// 새 사진은 R2에 올려 URL로 바꾸고, 기존 URL은 그대로 둡니다 (순서 유지)
+export async function uploadPhotoList(env, request, list) {
+  const out = await Promise.all(
+    list.map((p) => (p.startsWith('data:image/') ? saveImage(env, request, p, 'memories') : p))
+  );
+  if (!out.includes(null)) return out;
+  // 한 장이라도 형식이 안 맞으면 이번에 새로 올린 파일은 지우고 실패 처리
+  await Promise.all(out.map((u, i) => (u && u !== list[i] ? deleteImage(env, u) : null)));
+  return null;
+}
+
 // ---- 시도 횟수 잠금 -------------------------------------------------------
 // count/at 은 users 테이블의 *_fail_count / *_fail_at 값. D1 datetime('now')는 UTC.
 export function isLockedOut(count, at, threshold, ms) {

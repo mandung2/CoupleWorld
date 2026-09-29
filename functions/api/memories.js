@@ -1,4 +1,4 @@
-import { json, readJson } from '../_lib.js';
+import { json, readJson, memoryOut } from '../_lib.js';
 
 export async function onRequestPost({ request, env }) {
   const b = await readJson(request);
@@ -14,5 +14,5 @@ export async function onRequestPost({ request, env }) {
     `SELECT * FROM memories WHERE author_id IN (${placeholders}) AND deleted_at IS NULL ORDER BY created_at DESC`
   ).bind(...ids).all();
 
-  return json({ ok: true, items: results });
+  return json({ ok: true, items: results.map(memoryOut) });
 }

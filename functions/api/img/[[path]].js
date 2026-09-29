@@ -10,6 +10,8 @@ export async function onRequestGet({ env, params }) {
       'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream',
       ETag: obj.httpEtag,
       'Cache-Control': 'public, max-age=31536000, immutable',
+      // 저장된 기록 사진을 다시 편집(캔버스)할 때 필요. <img>로는 원래 어디서든 열리는 파일이라 노출 범위는 같습니다.
+      'Access-Control-Allow-Origin': '*',
       // 이미지로 선언된 파일을 브라우저가 다른 형식(HTML 등)으로 추측해 열지 않도록
       'X-Content-Type-Options': 'nosniff',
     },
