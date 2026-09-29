@@ -124,7 +124,12 @@ export async function deleteImage(env, url) {
 // ---- 시도 횟수 잠금 -------------------------------------------------------
 // count/at 은 users 테이블의 *_fail_count / *_fail_at 값. D1 datetime('now')는 UTC.
 export function isLockedOut(count, at, threshold, ms) {
-  if ((count || 0) < threshold || !at) return false;
+  return (count || 0) >= threshold && withinMs(at, ms);
+}
+
+// D1 datetime(UTC 문자열) at 이 지금으로부터 ms 안인지
+export function withinMs(at, ms) {
+  if (!at) return false;
   return Date.now() - new Date(String(at).replace(' ', 'T') + 'Z').getTime() < ms;
 }
 
@@ -137,9 +142,11 @@ const RESET_LOCK_MS = 15 * 60 * 1000;
 
 export async function checkResetIdentity(env, id, nickname, birth) {
   const fail = { ok: false, msg: '[시스템] 일치하는 계정을 찾을 수 없습니다.' };
-  const user = await env.DB.prepare('SELECT nickname, birth, reset_fail_count, reset_fail_at FROM users WHERE id = ?')
+  const user = await env.DB.prepare('SELECT nickname, birth, email, reset_fail_count, reset_fail_at FROM users WHERE id = ?')
     .bind(id).first();
   if (!user) return fail;
+  // 이메일이 등록된 계정은 이메일 인증으로만 찾을 수 있음 (닉네임·생일은 남도 알 수 있으니)
+  if (user.email) return { ok: false, msg: '[시스템] 이메일이 등록된 계정이에요. 이메일 인증번호로 비밀번호를 찾아주세요.' };
   if (isLockedOut(user.reset_fail_count, user.reset_fail_at, RESET_LOCK_THRESHOLD, RESET_LOCK_MS)) {
     return { ok: false, msg: '[시스템] 본인 확인 시도가 너무 많습니다. 15분 후 다시 시도해주세요.' };
   }
@@ -148,5 +155,110 @@ export async function checkResetIdentity(env, id, nickname, birth) {
       .bind((user.reset_fail_count || 0) + 1, id).run();
     return fail;
   }
+  return { ok: true };
+}
+
+// ---- 이메일 인증 (Resend) --------------------------------------------------
+// RESEND_API_KEY는 Cloudflare Pages 시크릿. 로컬(localhost)에서 키가 없으면
+// 실제로 보내지 않고 wrangler 로그에 내용을 찍습니다.
+const MAIL_FROM = 'CoupleWorld <noreply@coupleworld.online>';
+
+export function normEmail(e) {
+  return String(e || '').trim().toLowerCase();
+}
+
+export function validEmail(e) {
+  return e.length <= 254 && /^[^\s@]{1,64}@[^\s@]+\.[^\s@]{2,}$/.test(e);
+}
+
+// abcdef@gmail.com → ab****@gmail.com
+export function maskEmail(e) {
+  const [u, d] = String(e || '').split('@');
+  if (!d) return '';
+  return u.slice(0, 2) + '*'.repeat(Math.max(1, u.length - 2)) + '@' + d;
+}
+
+export async function sendEmail(env, request, to, subject, html) {
+  if (!env.RESEND_API_KEY) {
+    if (new URL(request.url).hostname === 'localhost') {
+      console.log('[DEV EMAIL]', to, subject, html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
+      return true;
+    }
+    return false;
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: MAIL_FROM, to: [to], subject, html })
+  });
+  if (!res.ok) console.log('resend error', res.status, await res.text());
+  return res.ok;
+}
+
+const CODE_TTL_MIN = 10;
+const CODE_COOLDOWN_S = 60;
+const CODE_MAX_PER_HOUR = 5;
+const CODE_MAX_TRIES = 5;
+
+const CODE_TITLES = {
+  signup: '회원가입 인증번호',
+  change: '복구 이메일 등록 인증번호',
+  reset: '비밀번호 찾기 인증번호'
+};
+
+// 6자리 인증번호를 만들어 메일로 보냄 — { ok, msg }
+export async function issueCode(env, request, purpose, target, email) {
+  const recent = await env.DB.prepare(
+    "SELECT COUNT(*) AS n, MAX(created_at) AS last FROM email_codes WHERE purpose = ? AND target = ? AND created_at > datetime('now', '-1 hour')"
+  ).bind(purpose, target).first();
+  if (recent && recent.n >= CODE_MAX_PER_HOUR) {
+    return { ok: false, msg: '[시스템] 인증번호를 너무 많이 요청했어요. 1시간 후 다시 시도해주세요.' };
+  }
+  if (recent && withinMs(recent.last, CODE_COOLDOWN_S * 1000)) {
+    return { ok: false, msg: '[시스템] 인증번호는 1분에 한 번만 받을 수 있어요. 잠시 후 다시 시도해주세요.' };
+  }
+
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+  await env.DB.batch([
+    // 새 번호를 보내면 이전 번호는 못 쓰게 함
+    env.DB.prepare('UPDATE email_codes SET used = 1 WHERE purpose = ? AND target = ? AND used = 0').bind(purpose, target),
+    env.DB.prepare('INSERT INTO email_codes (purpose, target, email, code_hash) VALUES (?, ?, ?, ?)')
+      .bind(purpose, target, email, await hashPassword(code, purpose + ':' + target))
+  ]);
+
+  const title = CODE_TITLES[purpose];
+  const sent = await sendEmail(env, request, email, `[커플월드] ${title}`,
+    `<div style="font-family:sans-serif;max-width:420px;margin:0 auto;padding:24px;color:#333">
+      <h2 style="margin:0 0 12px">커플월드 ${title}</h2>
+      <p style="margin:0 0 16px">아래 인증번호를 ${CODE_TTL_MIN}분 안에 입력해주세요.</p>
+      <p style="font-size:32px;font-weight:bold;letter-spacing:8px;margin:0 0 16px">${code}</p>
+      <p style="font-size:12px;color:#888;margin:0">직접 요청하지 않았다면 이 메일은 무시하셔도 됩니다.</p>
+    </div>`);
+  if (!sent) {
+    await env.DB.prepare('UPDATE email_codes SET used = 1 WHERE purpose = ? AND target = ? AND used = 0').bind(purpose, target).run();
+    return { ok: false, msg: '[시스템] 메일을 보내지 못했어요. 잠시 후 다시 시도해주세요.' };
+  }
+  return { ok: true };
+}
+
+// 인증번호 확인 — 맞으면 사용 처리. email을 주면 그 주소로 보낸 번호인지도 확인. { ok, msg }
+export async function consumeCode(env, purpose, target, code, email) {
+  const row = await env.DB.prepare(
+    'SELECT id, email, code_hash, attempts, created_at FROM email_codes WHERE purpose = ? AND target = ? AND used = 0 ORDER BY id DESC LIMIT 1'
+  ).bind(purpose, target).first();
+  const again = { ok: false, msg: '[시스템] 인증번호를 다시 받아주세요.' };
+  if (!row || !withinMs(row.created_at, CODE_TTL_MIN * 60 * 1000)) return again;
+  if (email !== undefined && row.email !== email) return again;
+  if (row.attempts >= CODE_MAX_TRIES) return again;
+
+  if ((await hashPassword(String(code || '').trim(), purpose + ':' + target)) !== row.code_hash) {
+    const tries = row.attempts + 1;
+    await env.DB.prepare('UPDATE email_codes SET attempts = ?, used = ? WHERE id = ?')
+      .bind(tries, tries >= CODE_MAX_TRIES ? 1 : 0, row.id).run();
+    return tries >= CODE_MAX_TRIES
+      ? { ok: false, msg: '[시스템] 인증번호를 여러 번 틀렸어요. 인증번호를 다시 받아주세요.' }
+      : { ok: false, msg: `[시스템] 인증번호가 맞지 않아요. (${tries}/${CODE_MAX_TRIES})` };
+  }
+  await env.DB.prepare('UPDATE email_codes SET used = 1 WHERE id = ?').bind(row.id).run();
   return { ok: true };
 }
